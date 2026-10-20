@@ -4,6 +4,7 @@ enum APIError: LocalizedError {
     case unauthorized
     case notFound
     case conflict
+    case locked
     case http(Int)
     case invalidResponse
     case offline
@@ -13,6 +14,7 @@ enum APIError: LocalizedError {
         case .unauthorized: return "Session expired. Please sign in again."
         case .notFound: return "Not found on the server."
         case .conflict: return "Changed on another device."
+        case .locked: return "Locked on the server (open on another device?)"
         case .http(let code): return "Server error (\(code))."
         case .invalidResponse: return "Unexpected server response."
         case .offline: return "No connection to the server."
@@ -68,6 +70,7 @@ final class NotesAPI {
         case 401: throw APIError.unauthorized
         case 404: throw APIError.notFound
         case 412: throw APIError.conflict
+        case 423: throw APIError.locked
         default: throw APIError.http(http.statusCode)
         }
     }

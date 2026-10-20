@@ -236,6 +236,11 @@ final class NoteStore: ObservableObject {
                 } else {
                     finishPush(id, rev, try await api.create(n))
                 }
+            } catch APIError.locked {
+                // Temporary: the file is being edited elsewhere. Stay pending (✓) and try again later.
+                if let i = index(id) { notes[i].error = nil }
+                lockedIds.insert(id)
+                scheduleLockedRetry()
             } catch APIError.offline {
                 syncMessage = "Offline — changes are saved on this Mac."
                 return false
@@ -251,7 +256,21 @@ final class NoteStore: ObservableObject {
         return true
     }
 
+    /// Notes the server refused because the file is locked; retried every 30 s, even in manual mode.
+    @Published private(set) var lockedIds = Set<UUID>()
+    private var lockedRetry: Task<Void, Never>?
+
+    private func scheduleLockedRetry() {
+        guard lockedRetry == nil else { return }
+        lockedRetry = Task {
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            lockedRetry = nil
+            if !lockedIds.isEmpty { await sync() }
+        }
+    }
+
     private func finishPush(_ id: UUID, _ rev: Int, _ s: ServerNote) {
+        lockedIds.remove(id)
         guard let i = index(id) else { return }
         notes[i].serverId = s.id
         notes[i].etag = s.etag

@@ -339,6 +339,7 @@ struct StatusBar: View {
         case .synced(let ts):
             return "Synced with \(store.serverName)" + (ts.map { " · \(Fmt.time($0))" } ?? "")
         case .pending:
+            if store.lockedIds.contains(note.id) { return "Saved on this Mac · locked on \(store.serverName), retrying" }
             if !store.isOnline { return "Saved on this Mac · will sync when online" }
             return store.syncMode == .manual ? "Saved on this Mac · not synced yet" : "Saved on this Mac · syncing soon"
         case .syncing:
