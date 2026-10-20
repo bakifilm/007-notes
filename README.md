@@ -16,3 +16,6 @@ First launch: **System Settings → Privacy & Security → Open Anyway**.
 
 ## Build
 GitHub Actions builds every push; bumping `VERSION` on `main` publishes a release.
+
+## Icons
+`design/icons/` holds the family's icon set (Notes, Talk, PDF Watermark) and the original sheet.

@@ -43,10 +43,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+    /// Like other Mac apps: the red button only closes the window, the app stays in the Dock (⌘Q quits).
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    func windowWillClose(_ notification: Notification) { store.saveNow() }
+
+    /// Clicking the Dock icon brings the window back.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        window?.makeKeyAndOrderFront(nil)
+        if !flag { window?.makeKeyAndOrderFront(nil) }
         return true
     }
 
