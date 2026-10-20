@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build app
+        run: bash scripts/bundle.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 007-Notes-${{ github.ref_name }}
+          path: build/*.zip
+
+      # A new release is published whenever the VERSION file changes to a version not released yet.
+      - name: Check release
+        if: github.ref == 'refs/heads/main'
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="v$(cat VERSION)"
+          echo "tag=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish release
+        if: github.ref == 'refs/heads/main' && steps.rel.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.rel.outputs.tag }}
+          name: 007 Notes ${{ steps.rel.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          files: build/*.zip
+          generate_release_notes: true
